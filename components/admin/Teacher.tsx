@@ -8,6 +8,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "antd"
+import Link from "next/link"
 
 const teachers = [
   {
@@ -36,7 +38,9 @@ const teachers = [
 
  const Teacher = ()=> {
   return (
-    <Table>
+    <>
+      <Link href={"/admin/teacher/create-techer"} className="my-2 p-1" ><Button type="primary" className="bg-black! p-4!">Add New Teacher</Button></Link>
+    <Table className="mt-2">
       <TableCaption>List of Teachers</TableCaption>
 
       <TableHeader>
@@ -73,6 +77,7 @@ const teachers = [
         ))}
       </TableBody>
     </Table>
+    </>
   )
 }
 

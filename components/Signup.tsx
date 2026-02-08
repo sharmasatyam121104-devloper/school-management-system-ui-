@@ -1,8 +1,11 @@
 'use client'
 
-import {Button, Form, Input} from 'antd'
+import {Button, Form, Input, message} from 'antd'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import Link from 'next/link'
+import clientErrorHandler from '@/lib/clientErrorHandler'
+import api from '@/lib/axios'
+import { useState } from 'react'
 
 interface ValueInterfce {
     name: string
@@ -12,9 +15,27 @@ interface ValueInterfce {
 }
 
 const Signup = () => {
+    const [loader, setLoader] = useState(false)
 
     const handleSignup = async(value: ValueInterfce)=>{
-        console.log(value);
+        try {
+            setLoader(true)
+            const payload = {
+                name: value.name,
+                email: value.email,
+                mobile: value.phone,
+                password: value.password,
+                role: "STUDENT"
+            }
+            await api.post("/user/signup", payload)
+            message.success(`${value.name}, Yor are Signup sucessfully.!`)
+        } 
+        catch (error) {
+            return clientErrorHandler(error)
+        }
+        finally {
+            setLoader(false)
+        }
     }
 
   return (
@@ -82,7 +103,7 @@ const Signup = () => {
                     </Form.Item>
 
                     <Form.Item>
-                    <Button type="primary" htmlType="submit" block>
+                    <Button type="primary" htmlType="submit" block loading={loader} disabled={loader}>
                         Sign Up
                     </Button>
                     </Form.Item>
