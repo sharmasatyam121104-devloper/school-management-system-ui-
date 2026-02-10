@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Form,
   Input,
@@ -8,105 +8,123 @@ import {
   Card,
   InputNumber,
   Upload,
+  message,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
+import clientErrorHandler from "@/lib/clientErrorHandler";
+import api from "@/lib/axios";
+import { useRouter } from "next/navigation";
 
 type Props = {
   setStep: React.Dispatch<React.SetStateAction<number>>;
 };
 
+/* ===============================
+   LOCAL STORAGE HELPERS
+================================ */
 const readDraft = (key: string) => {
   if (typeof window === "undefined") return null;
   const data = localStorage.getItem(key);
   return data ? JSON.parse(data) : null;
 };
 
+/* ===============================
+   AXIOS INSTANCE
+================================ */
+
+
 export default function TeacherSalaryDocsPage({ setStep }: Props) {
+  const [loading, setLoading] = useState(false)
   const [form] = Form.useForm();
+  const router = useRouter()
 
-  const salaryDraft = readDraft("teacherSalaryDocsDraft");
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [aadhaarList, setAadhaarList] = useState<any[]>([]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [aadhaarList, setAadhaarList] = useState<any[]>(
-    salaryDraft?.documents?.aadhaarCard
-      ? [
-          {
-            uid: "aadhaar-1",
-            name: salaryDraft.documents.aadhaarCard,
-            status: "done",
+ const [photoList, setPhotoList] = useState<any[]>([]);
+  
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [panList, setPanList] = useState<any[]>([]);
+
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [certList, setCertList] = useState<any[]>([]);
+
+  // clear drafts after successful submit
+  const clearTeacherDrafts = () => {
+    localStorage.removeItem("teacherUserDraft");
+    localStorage.removeItem("teacherBasicInfoDraft");
+    localStorage.removeItem("teacherAcademicInfoDraft");
+    localStorage.removeItem("teacherPersonalInfoDraft");
+  };
+
+
+  /* ===============================
+     SUBMIT HANDLER
+  ================================ */
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onFinish = async (values: any) => {
+    try {
+      /* -----------------------------
+         FINAL JSON DATA
+      ------------------------------ */
+      const dataPayload = {
+        user: readDraft("teacherUserDraft"),
+        basicInfo: readDraft("teacherBasicInfoDraft"),
+        academicInfo: readDraft("teacherAcademicInfoDraft"),
+        personalInfo: readDraft("teacherPersonalInfoDraft"),
+        salaryAndDocs: {
+          salary: values.salary,
+          bankDetails: {
+            accountNumber: values.accountNumber,
+            ifscCode: values.ifscCode,
+            bankName: values.bankName,
           },
-        ]
-      : []
-  );
+        },
+      };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [panList, setPanList] = useState<any[]>(
-    salaryDraft?.documents?.panCard
-      ? [
-          {
-            uid: "pan-1",
-            name: salaryDraft.documents.panCard,
-            status: "done",
-          },
-        ]
-      : []
-  );
+      /* -----------------------------
+         FORMDATA (POSTMAN STYLE)
+      ------------------------------ */
+      const formData = new FormData();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [certList, setCertList] = useState<any[]>(
-    salaryDraft?.documents?.certificates
-      ? salaryDraft.documents.certificates.map(
-          (name: string, index: number) => ({
-            uid: `cert-${index}`,
-            name,
-            status: "done",
-          })
-        )
-      : []
-  );
+      // JSON string
+      formData.append("data", JSON.stringify(dataPayload));
 
-  useEffect(() => {
-    if (!salaryDraft) return;
+      // files
+      if (aadhaarList[0]?.originFileObj) {
+        formData.append("aadhaarCard", aadhaarList[0].originFileObj);
+      }
 
-    form.setFieldsValue({
-      salary: salaryDraft.salary,
-      accountNumber: salaryDraft.bankDetails?.accountNumber,
-      ifscCode: salaryDraft.bankDetails?.ifscCode,
-      bankName: salaryDraft.bankDetails?.bankName,
-    });
-  }, [form, salaryDraft]);
+      if (panList[0]?.originFileObj) {
+        formData.append("panCard", panList[0].originFileObj);
+      }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onFinish = (values: any) => {
-    const payload = {
-      salary: values.salary,
-      bankDetails: {
-        accountNumber: values.accountNumber,
-        ifscCode: values.ifscCode,
-        bankName: values.bankName,
-      },
-      documents: {
-        aadhaarCard: aadhaarList[0]?.name || null,
-        panCard: panList[0]?.name || null,
-        certificates: certList.map((f) => f.name),
-      },
-    };
+      if (photoList[0]?.originFileObj) {
+        formData.append("photo", photoList[0].originFileObj);
+      }
 
-    localStorage.setItem(
-      "teacherSalaryDocsDraft",
-      JSON.stringify(payload)
-    );
+      certList.forEach((file) => {
+        if (file.originFileObj) {
+          formData.append("certificates", file.originFileObj);
+        }
+      });
 
-    const finalTeacherPayload = {
-      user: readDraft("teacherUserDraft"),
-      basicInfo: readDraft("teacherBasicInfoDraft"),
-      academicInfo: readDraft("teacherAcademicInfoDraft"),
-      personalInfo: readDraft("teacherPersonalInfoDraft"),
-      salaryAndDocs: payload,
-    };
-
-    console.log("FINAL TEACHER PAYLOAD:", finalTeacherPayload);
-
+      /* -----------------------------
+         API CALL
+      ------------------------------ */
+      setLoading(true)
+      await api.post("/teacher/create-teacher", formData);
+      message.success("Teacher created successfully ");
+      router.replace('/admin/teacher')
+      clearTeacherDrafts()
+    }
+    catch (error) {
+      return clientErrorHandler(error)
+    }
+    finally{
+      setLoading(false)
+    }
   };
 
   return (
@@ -140,15 +158,15 @@ export default function TeacherSalaryDocsPage({ setStep }: Props) {
           </Form.Item>
 
           <Form.Item label="Bank Account Number" name="accountNumber">
-            <Input placeholder="Account number" />
+            <Input />
           </Form.Item>
 
           <Form.Item label="IFSC Code" name="ifscCode">
-            <Input placeholder="IFSC code" />
+            <Input />
           </Form.Item>
 
           <Form.Item label="Bank Name" name="bankName">
-            <Input placeholder="Bank name" />
+            <Input />
           </Form.Item>
 
           <Form.Item label="Aadhaar Card">
@@ -172,6 +190,18 @@ export default function TeacherSalaryDocsPage({ setStep }: Props) {
               maxCount={1}
             >
               <Button icon={<UploadOutlined />}>Upload PAN</Button>
+            </Upload>
+          </Form.Item>
+
+          <Form.Item label="photo">
+            <Upload
+              listType="picture"
+              fileList={photoList}
+              onChange={({ fileList }) => setPhotoList(fileList)}
+              beforeUpload={() => false}
+              maxCount={1}
+            >
+              <Button icon={<UploadOutlined />}>Upload Photo</Button>
             </Upload>
           </Form.Item>
 
@@ -202,8 +232,10 @@ export default function TeacherSalaryDocsPage({ setStep }: Props) {
                 type="primary"
                 htmlType="submit"
                 style={{ width: "100%" }}
+                loading={loading}
+                disabled={loading}
               >
-                Save & Continue
+                Submit Teacher
               </Button>
             </div>
           </Form.Item>
