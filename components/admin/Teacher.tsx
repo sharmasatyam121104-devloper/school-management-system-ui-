@@ -14,6 +14,31 @@ import { Alert, Button, Divider, Skeleton } from "antd";
 import Link from "next/link";
 import  useSWR  from "swr";
 import Fetcher from "@/lib/Fetcher";
+import { IUser } from "./Student";
+
+
+export interface ITeacher {
+  _id: string;
+  name: string;
+  email: string;
+  mobile: string;
+  role: "TEACHER" | "STUDENT" | "ADMIN";
+  createdAt: string;
+  updatedAt: string;
+  teacherId: string;
+  user: IUser;
+  subjectsCanTeach: string[];
+  department: string;
+  experienceYears: string;
+  highestQualification: string;
+  status: string;
+}
+
+export interface ITeacherResponse {
+  data: ITeacher[];
+  message: string;
+  success: boolean;
+}
 
 
 const Teacher = () => {
@@ -21,7 +46,7 @@ const Teacher = () => {
 
   console.log(data);
 
-  // 🔹 Error handling
+  //  Error handling
   if (error) {
     return (
       <>
@@ -39,7 +64,7 @@ const Teacher = () => {
     );
   }
 
-  // 🔹 Loading state
+  //  Loading state
   if (isLoading || !data) {
     return <Skeleton active />;
   }
@@ -72,7 +97,7 @@ const Teacher = () => {
         </TableHeader>
 
         <TableBody>
-          {teachers.map((teacher: any) => (
+          {teachers.map((teacher: ITeacher) => (
             <TableRow key={teacher.teacherId}>
               <TableCell>{teacher.teacherId}</TableCell>
               <TableCell className="capitalize">{teacher.user?.name}</TableCell>

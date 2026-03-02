@@ -63,35 +63,6 @@ interface Teacher {
   documents: Documents;
 }
 
-/* ===============================
-   DUMMY DATA
-================================ */
-// const teacher?: Teacher = {
-//   teacherId: "T-5",
-//   user: { name: "User Eight", email: "username8@gmail.com", mobile: "8383838222" },
-//   designation: "HOD",
-//   department: "Science",
-//   employmentType: "PERMANENT",
-//   highestQualification: "B.Ed",
-//   specialization: "Hindi",
-//   experienceYears: 5,
-//   subjectsCanTeach: ["Hindi"],
-//   isClassTeacher: false,
-//   salary: 100000,
-//   address: { street: "House no2", city: "NSP", state: "Maharashtra", pincode: "401208" },
-//   bankDetails: { accountNumber: "3738383", ifscCode: "KKKE", bankName: "NNN" },
-//   documents: {
-//     photo: 
-//       "https://res.cloudinary.com/dhbjsge9k/image/upload/v1770592155/teacher_documents/i9twecwdtm1mnrq8sxm1.png",
-//     aadhaarCard:
-//       "https://res.cloudinary.com/dhbjsge9k/image/upload/v1770592157/teacher_documents/ipjg4o4bez4rg3cl5lv6.png",
-//     panCard:
-//       "https://res.cloudinary.com/dhbjsge9k/image/upload/v1770592159/teacher_documents/fmwo2nunz7fyyqqxncx2.png",
-//     certificates: [
-//       "https://res.cloudinary.com/dhbjsge9k/image/upload/v1770592155/teacher_documents/i9twecwdtm1mnrq8sxm1.png",
-//     ],
-//   },
-// };
 
 /* ===============================
    STYLES
@@ -200,7 +171,7 @@ const ViewEditTeacher = ({ id }: { id: string }) => {
       );
 
       setCertList(
-        data.documents.certificates?.map((url, i) => ({
+        data.documents.certificates?.map((url:string, i: number) => ({
           uid: `cert-${i}`,
           name: `Certificate-${i + 1}`,
           url,

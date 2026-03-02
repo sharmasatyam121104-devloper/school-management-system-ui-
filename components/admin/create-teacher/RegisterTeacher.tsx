@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
-import { Form, Input, Button, Card } from "antd";
+import api from "@/lib/axios";
+import clientErrorHandler from "@/lib/clientErrorHandler";
+import { Form, Input, Button, Card, message } from "antd";
+import { useState } from "react";
 
 type Props = {
   setStep: React.Dispatch<React.SetStateAction<number>>;
+  email: string
 };
 
 type TeacherUserForm = {
@@ -14,24 +17,34 @@ type TeacherUserForm = {
   password: string;
 };
 
-export default function TeacherRegisterPage({ setStep }: Props) {
+export default function TeacherRegisterPage({ setStep, email }: Props) {
+  console.log(email);
   const [form] = Form.useForm<TeacherUserForm>();
+  const [loading, setLoading] = useState(false)
 
-  // Auto-fill from localStorage
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const draft = localStorage.getItem("teacherUserDraft");
-    if (!draft) return;
-
-    const parsed = JSON.parse(draft);
-    form.setFieldsValue(parsed);
-  }, [form]);
-
-  const onFinish = (values: TeacherUserForm) => {
-    localStorage.setItem("teacherUserDraft", JSON.stringify(values));
-    console.log("Saved data:", values);
-    setStep(2);
+  const onFinish = async(values: TeacherUserForm) => {
+    // localStorage.setItem("teacherUserDraft", JSON.stringify(values));
+    // console.log("Saved data:", values);
+    // setStep(2);
+    try {
+      setLoading(true)
+      const payload = {
+        name: values.name,
+        email: values.email,
+        mobile: values.mobile,
+        password: values.password,
+        role: "TEACHER",
+      }
+      const {data} = await api.post("/user/signup", payload)
+      message.info(data.message)
+      setStep(2);
+      
+    } catch (error) {
+      return clientErrorHandler(error)
+    }
+    finally {
+      setLoading(false)
+    }
   };
 
   return (
@@ -42,6 +55,7 @@ export default function TeacherRegisterPage({ setStep }: Props) {
           layout="vertical"
           onFinish={onFinish}
           autoComplete="off"
+          initialValues={{ email }}   
         >
           {/* Name */}
           <Form.Item
@@ -81,6 +95,9 @@ export default function TeacherRegisterPage({ setStep }: Props) {
           >
             <Input placeholder="10 digit mobile" />
           </Form.Item>
+          <p className="text-sm text-slate-800 -mt-4 mb-4 underline">
+            This mobile number will be used as the primary contact number.
+          </p>
 
           {/* Password */}
           <Form.Item
@@ -100,17 +117,19 @@ export default function TeacherRegisterPage({ setStep }: Props) {
           {/* Buttons */}
           <Form.Item>
             <div style={{ display: "flex", gap: 12 }}>
-              <Button
+              {/* <Button
                 style={{ width: "100%" }}
                 onClick={() => setStep(1)}
               >
                 Back
-              </Button>
+              </Button> */}
 
               <Button
                 type="primary"
                 htmlType="submit"
                 style={{ width: "100%" }}
+                disabled={loading}
+                loading={loading}
               >
                 Save & Continue
               </Button>

@@ -10,104 +10,170 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import useSWR from "swr";
+import Fetcher from "@/lib/Fetcher";
+import Link from "next/link";
+import { Alert, Skeleton } from "antd";
+import moment from "moment";
 
-const students = [
-  {
-    rollNo: "101",
-    name: "Rahul Sharma",
-    class: "10",
-    section: "A",
-    gender: "Male",
-    dob: "2009-05-12",
-    phone: "9876543210",
-    parentName: "Anil Sharma",
-    parentPhone: "9123456789",
-    address: "Mumbai",
-    admissionDate: "2023-06-10",
-    feesStatus: "Paid",
-    status: "Active",
-  },
-  {
-    rollNo: "102",
-    name: "Priya Verma",
-    class: "9",
-    section: "B",
-    gender: "Female",
-    dob: "2010-02-20",
-    phone: "9988776655",
-    parentName: "Raj Verma",
-    parentPhone: "9001122334",
-    address: "Thane",
-    admissionDate: "2023-06-12",
-    feesStatus: "Pending",
-    status: "Inactive",
-  },
-];
+export interface IUser {
+  _id: string;
+  name: string,
+  email: string,
+  mobile: string,
+  role: string,
+  createdAt: string
+}
+
+export interface IStudent  {
+    studentId: string;
+
+    basicInfo: {
+        firstName: string;
+        lastName: string;
+        gender: "MALE" | "FEMALE" | "OTHER";
+        dob: string;
+        bloodGroup?: string;
+        aadhaarNumber?: string;
+        religion?: string;
+        nationality: string;
+        mobile: string;
+        password: string
+    };
+
+    contactInfo: {
+        studentMobile: string;
+        studentEmail: string;
+
+        address: {
+            current: string;
+            permanent: string;
+            city: string;
+            state: string;
+            pincode: string;
+        };
+
+        guardian: {
+            fatherName?: string;
+            motherName?: string;
+            guardianName: string;
+            guardianMobile: string;
+            guardianEmail?: string;
+            relation: string;
+        };
+    };
+
+    academicInfo: {
+        admissionDate: Date;
+        academicYear: string;
+        className: string;
+        rollNumber: string;
+        medium: "ENGLISH" | "HINDI";
+        stream?: "SCIENCE" | "COMMERCE" | "ARTS";
+        previousSchool?: string;
+        previousPercentage?: number;
+    };
+
+    healthInfo?: {
+        bloodGroup?: string;
+        medicalConditions?: string;
+        emergencyContact?: string;
+        doctorName?: string;
+    };
+
+    documents?: {
+        birthCertificate?: string;
+        aadhaarCard?: string;
+        transferCertificate?: string;
+        marksheet?: string;
+        photo?: string;
+    };
+
+    user: IUser;
+    accountStatus: "ACTIVE" | "INCOMPLETE" | "INACTIVE";
+    lastLogin?: Date;
+}
+
 
 const Student = ()=> {
+  const { data, error, isLoading } = useSWR("/student/fetch-student", Fetcher);
+
+  const students = data
+  console.log(data);
+    //  Error handling
+  if (error) {
+    return (
+      <>
+        <Link href={"/admin/student/create-student"} className="my-8 py-8 ml-270 h-20 w-60  ">
+          <Button >Add New Student</Button>
+        </Link>
+        <Alert
+          title="Error"
+          description={error.message || "Something went wrong"}
+          type="error"
+          showIcon
+          className="mt-10!"
+        />
+      </>
+    );
+  }
+
+  if (isLoading || !data) {
+    return <Skeleton active />;
+  }
+
   return (
     <div className="rounded-xl border bg-background p-4">
-      <h2 className="mb-4 text-lg font-semibold">Student List</h2>
-
+      <div className="flex justify-between my-2">
+        <h2 className="mb-4 text-lg font-semibold">Student List</h2>
+        <Link href={"/admin/student/create-student"} className="   ">
+          <Button >Add New Student</Button>
+        </Link>
+      </div>
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Roll No</TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Class</TableHead>
-            <TableHead>Sec</TableHead>
             <TableHead>Gender</TableHead>
             <TableHead>DOB</TableHead>
             <TableHead>Phone</TableHead>
             <TableHead>Parent</TableHead>
             <TableHead>Parent Phone</TableHead>
-            <TableHead>Address</TableHead>
             <TableHead>Admission</TableHead>
-            <TableHead>Fees</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead className="text-right">Action</TableHead>
+            <TableHead>View & Edit</TableHead>
           </TableRow>
         </TableHeader>
 
         <TableBody>
-          {students.map((student) => (
-            <TableRow key={student.rollNo}>
-              <TableCell>{student.rollNo}</TableCell>
-              <TableCell className="font-medium">{student.name}</TableCell>
-              <TableCell>{student.class}</TableCell>
-              <TableCell>{student.section}</TableCell>
-              <TableCell>{student.gender}</TableCell>
-              <TableCell>{student.dob}</TableCell>
-              <TableCell>{student.phone}</TableCell>
-              <TableCell>{student.parentName}</TableCell>
-              <TableCell>{student.parentPhone}</TableCell>
-              <TableCell>{student.address}</TableCell>
-              <TableCell>{student.admissionDate}</TableCell>
-              <TableCell>
-                <Badge
-                    variant={
-                        student.feesStatus === "Paid"
-                        ? "default"
-                        : "destructive"
-                    }
-                    >
-                    {student.feesStatus}
-                </Badge>
-              </TableCell>
+          {students.data.map((student: IStudent) => (
+            <TableRow key={student.studentId}>
+              <TableCell>{student.studentId}</TableCell>
+              <TableCell className="font-medium capitalize">{student.user.name}</TableCell>
+              <TableCell>{student.academicInfo.className}</TableCell>
+              <TableCell className="">{student.basicInfo.gender}</TableCell>
+              <TableCell>{moment(student.basicInfo.dob).format("DD MMMM YYYY")}</TableCell>
+              <TableCell>{student.user.mobile}</TableCell>
+              <TableCell>{student.contactInfo.guardian.guardianName}</TableCell>
+              <TableCell>{student.contactInfo.guardian.guardianMobile}</TableCell>
+              <TableCell>{moment(student.user.createdAt).format("DD MMMM YYYY, hh:mm A")}</TableCell>
               <TableCell>
                 <Badge
                   variant={
-                    student.status === "Active" ? "default" : "secondary"
+                    student.accountStatus === "ACTIVE" ? "default" : "secondary"
                   }
                 >
-                  {student.status}
+                  {student.accountStatus}
                 </Badge>
               </TableCell>
               <TableCell className="text-right space-x-2">
-                <Button size="sm" variant="outline">
-                  View
-                </Button>
-                <Button size="sm">Edit</Button>
+                <Link href={`/admin/student/view-student/${student.user._id}`}>
+                    <Button size="sm" variant="outline" >
+                      View
+                    </Button>
+                </Link>
               </TableCell>
             </TableRow>
           ))}

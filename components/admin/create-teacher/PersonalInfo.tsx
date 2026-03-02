@@ -1,79 +1,130 @@
 "use client";
 
-import { useEffect } from "react";
-import { Form, Input, Button, Select, Card } from "antd";
-
-const { Option } = Select;
+import React, { useState } from "react";
+import { Form, Input, Button, Card, Radio, message } from "antd";
+import clientErrorHandler from "@/lib/clientErrorHandler";
+import api from "@/lib/axios";
 
 type Props = {
   setStep: React.Dispatch<React.SetStateAction<number>>;
+  email: string;
 };
 
-export default function TeacherPersonalInfoPage({ setStep }: Props) {
-  const [form] = Form.useForm();
+type PersonalFormValues = {
+  gender: "MALE" | "FEMALE" | "OTHER";
+  dob: Date;
+  primaryContact: string;
+  emergencyContact: string;
+  street: string;
+  city: string;
+  state: string;
+  pincode: string;
+};
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+export default function TeacherPersonalInfoPage({
+  setStep,
+  email,
+}: Props) {
+  const [form] = Form.useForm<PersonalFormValues>();
+  const [loading, setLoading] = useState(false);
 
-    const savedData = localStorage.getItem("teacherPersonalInfoDraft");
-    if (savedData) {
-      const parsed = JSON.parse(savedData);
+  const onFinish = async (values: PersonalFormValues) => {
+    try {
+      setLoading(true);
 
-      form.setFieldsValue({
-        street: parsed.address?.street,
-        city: parsed.address?.city,
-        state: parsed.address?.state,
-        pincode: parsed.address?.pincode,
-        bloodGroup: parsed.bloodGroup,
-      });
+      const formattedData = {
+        email,
+        gender: values.gender,
+        dob: values.dob,
+        primaryContact: values.primaryContact,
+        emergencyContact: values.emergencyContact,
+        address: {
+          street: values.street,
+          city: values.city,
+          state: values.state,
+          pincode: values.pincode,
+        },
+      };
+
+      console.log("PERSONAL DATA:", formattedData);
+
+      
+      const { data } = await api.post("/teacher/create-teacher/save-personal-info", formattedData);
+      message.success(data.message);
+      setStep(4);
+
+    } 
+    catch (error) {
+      clientErrorHandler(error);
+    } 
+    finally {
+      setLoading(false);
     }
-  }, [form]);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onFinish = (values: any) => {
-    const payload = {
-      address: {
-        street: values.street,
-        city: values.city,
-        state: values.state,
-        pincode: values.pincode,
-      },
-      bloodGroup: values.bloodGroup,
-    };
-
-    localStorage.setItem(
-      "teacherPersonalInfoDraft",
-      JSON.stringify(payload)
-    );
-
-    console.log("Personal Info Saved:", payload);
-    setStep(5);
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#f5f5f5",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 16,
-      }}
-    >
-      <Card title="Teacher – Personal Information" style={{ width: 520 }}>
+    <div className="flex justify-center items-center min-h-screen bg-gray-100 p-4 w-full">
+      <Card title="Personal Information" className="w-full max-w-xl">
         <Form
           form={form}
           layout="vertical"
           onFinish={onFinish}
-          autoComplete="off"
         >
+          {/* Gender */}
           <Form.Item
-            label="Street Address"
-            name="street"
-            rules={[{ required: true, message: "Street address is required" }]}
+            label="Gender"
+            name="gender"
+            rules={[{ required: true, message: "Please select gender" }]}
           >
-            <Input placeholder="House no, area, landmark" />
+            <Radio.Group>
+              <Radio value="MALE">Male</Radio>
+              <Radio value="FEMALE">Female</Radio>
+              <Radio value="OTHER">Other</Radio>
+            </Radio.Group>
+          </Form.Item>
+
+          {/* Date of Birth */}
+          <Form.Item
+            label="Date of Birth"
+            name="dob"
+            rules={[{ required: true, message: "Date of birth is required" }]}
+          >
+            <Input type="date" />
+          </Form.Item>
+
+          {/* Primary Contact */}
+          <Form.Item
+            label="Primary Contact"
+            name="primaryContact"
+            rules={[
+              { required: true, message: "Primary contact is required" },
+              {
+                pattern: /^[0-9]{10}$/,
+                message: "Must be 10 digits",
+              },
+            ]}
+          >
+            <Input placeholder="10 digit mobile number" />
+          </Form.Item>
+
+          {/* Emergency Contact */}
+          <Form.Item
+            label="Emergency Contact"
+            name="emergencyContact"
+            rules={[
+              { required: true, message: "Emergency contact is required" },
+            ]}
+          >
+            <Input placeholder="Emergency contact number" />
+          </Form.Item>
+
+          {/* Address Fields */}
+          <Form.Item
+            label="Street"
+            name="street"
+            rules={[{ required: true, message: "Street is required" }]}
+          >
+            <Input />
           </Form.Item>
 
           <Form.Item
@@ -81,7 +132,7 @@ export default function TeacherPersonalInfoPage({ setStep }: Props) {
             name="city"
             rules={[{ required: true, message: "City is required" }]}
           >
-            <Input placeholder="City name" />
+            <Input />
           </Form.Item>
 
           <Form.Item
@@ -89,7 +140,7 @@ export default function TeacherPersonalInfoPage({ setStep }: Props) {
             name="state"
             rules={[{ required: true, message: "State is required" }]}
           >
-            <Input placeholder="State name" />
+            <Input />
           </Form.Item>
 
           <Form.Item
@@ -99,36 +150,23 @@ export default function TeacherPersonalInfoPage({ setStep }: Props) {
               { required: true, message: "Pincode is required" },
               {
                 pattern: /^[0-9]{6}$/,
-                message: "Pincode must be 6 digits",
+                message: "Must be 6 digits",
               },
             ]}
           >
-            <Input placeholder="6 digit pincode" />
+            <Input />
           </Form.Item>
 
-          <Form.Item label="Blood Group" name="bloodGroup">
-            <Select placeholder="Select blood group">
-              <Option value="A+">A+</Option>
-              <Option value="A-">A-</Option>
-              <Option value="B+">B+</Option>
-              <Option value="B-">B-</Option>
-              <Option value="AB+">AB+</Option>
-              <Option value="AB-">AB-</Option>
-              <Option value="O+">O+</Option>
-              <Option value="O-">O-</Option>
-            </Select>
-          </Form.Item>
-
+          {/* Submit */}
           <Form.Item>
-            <div style={{ display: "flex", gap: 12 }}>
-              <Button style={{ width: "100%" }} onClick={() => setStep(3)}>
-                Back
-              </Button>
-
-              <Button type="primary" htmlType="submit" style={{ width: "100%" }}>
-                Save & Continue
-              </Button>
-            </div>
+            <Button
+              type="primary"
+              htmlType="submit"
+              block
+              loading={loading}
+            >
+              Save & Continue
+            </Button>
           </Form.Item>
         </Form>
       </Card>
