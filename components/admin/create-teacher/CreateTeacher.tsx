@@ -7,6 +7,7 @@ import clientErrorHandler from '@/lib/clientErrorHandler'
 import api from '@/lib/axios'
 import TeacherProfessionalInfo from './ProfessionalInfo'
 import FinanceInfo from './FinanceInfo'
+import TeacherStatusMessage from './StatusMessage'
 
 const CreateTeacher = () => {
 
@@ -36,11 +37,8 @@ const checkStatusOfRegistration = async () => {
     else if (status === "PERSONAL") {
       setStep(4);
     } 
-    else if (status === "FINANCE") {
-      setStep(5);
-    } 
     else if (status === "COMPLETED") {
-      setStep(6);
+      setStep(5);
     }
 
   } catch (error) {
@@ -77,6 +75,8 @@ const checkStatusOfRegistration = async () => {
       {step === 2  && <TeacherProfessionalInfo setStep={setStep} email={email} />}
       {step === 3 && <TeacherPersonalInfoPage setStep={setStep} email={email}/>}
       {step === 4 && <FinanceInfo setStep={setStep} email={email}/>}
+      {step === 5 && <TeacherStatusMessage message="Teacher registered successfully." /> }
+      {step === 6 && <TeacherStatusMessage message="Teacher registered successfully." /> }
     </div>
   )
 }

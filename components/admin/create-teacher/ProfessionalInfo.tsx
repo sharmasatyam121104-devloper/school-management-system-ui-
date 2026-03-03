@@ -142,7 +142,7 @@ const TeacherProfessionalInfo: React.FC<Props> = ({ setStep, email}) => {
 
           {/* Submit */}
           <Form.Item>
-            <Button type="primary" htmlType="submit" block size="large">
+            <Button type="primary" htmlType="submit" block size="large" loading={loading} disabled={loading}>
               Save & Continue
             </Button>
           </Form.Item>

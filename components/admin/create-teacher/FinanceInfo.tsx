@@ -91,12 +91,12 @@ export default function TeacherFinanceInfoPage({
         );
       });
 
-      console.log("FINANCE DATA READY");
+      console.log("FINANCE DATA READY", formData);
 
       // Example API
-      // await api.post("/teacher/save-finance", formData);
+      const {data} = await api.post("/teacher/create-teacher/save-finance", formData);
 
-      message.success("Finance information saved successfully");
+      message.success(data.message);
       setStep(6);
 
     } catch (error) {
