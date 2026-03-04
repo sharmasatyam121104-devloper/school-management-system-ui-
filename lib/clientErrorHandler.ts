@@ -6,10 +6,10 @@ const clientErrorHandler = (error: unknown) => {
        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = error.response?.data as any;
 
-    // Mongo duplicate key
-    if (data?.message?.includes("E11000")) {
-      return message.error("This mobile number is already registered");
-    }
+    // // Mongo duplicate key
+    // if (data?.message?.includes("E11000")) {
+    //   return message.error("This mobile number is already registered");
+    // }
 
     // Normal API message
     if (data?.message) {

@@ -1,4 +1,4 @@
-"use client"; // MUST for useSWR + hooks
+"use client";
 
 import {
   Table,
@@ -9,108 +9,137 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
 import { Badge } from "@/components/ui/badge";
 import { Alert, Button, Divider, Skeleton } from "antd";
 import Link from "next/link";
-import  useSWR  from "swr";
+import useSWR from "swr";
 import Fetcher from "@/lib/Fetcher";
-import { IUser } from "./Student";
 
+/* =========================
+   TYPE DEFINITIONS
+========================= */
 
-export interface ITeacher {
+interface IUser {
   _id: string;
   name: string;
   email: string;
   mobile: string;
-  role: "TEACHER" | "STUDENT" | "ADMIN";
-  createdAt: string;
-  updatedAt: string;
-  teacherId: string;
-  user: IUser;
-  subjectsCanTeach: string[];
-  department: string;
-  experienceYears: string;
-  highestQualification: string;
+}
+
+interface ITeacher {
+  _id: string;
   status: string;
+  account: {
+    teacherId: string;
+    user: IUser;
+  };
 }
 
-export interface ITeacherResponse {
-  data: ITeacher[];
-  message: string;
+interface ITeacherResponse {
   success: boolean;
+  message: string;
+  data: ITeacher[];
 }
 
+/* =========================
+   COMPONENT
+========================= */
 
 const Teacher = () => {
-  const { data, error, isLoading } = useSWR("/teacher/fetch-teacher", Fetcher);
+  const { data, error, isLoading } = useSWR<ITeacherResponse>(
+    "/teacher/fetch-teacher",
+    Fetcher
+  );
 
   console.log(data);
 
-  //  Error handling
+  /* =========================
+     ERROR STATE
+  ========================== */
+
   if (error) {
     return (
-      <>
-        <Link href={"/admin/teacher/create-teacher"} className="my-8 py-8 ml-270 h-20 w-60  ">
+      <div className="p-6">
+        <Link href="/admin/teacher/create-teacher">
           <Button type="primary">Add New Teacher</Button>
         </Link>
+
+        <Divider />
+
         <Alert
-          title="Error"
+          message="Error"
           description={error.message || "Something went wrong"}
           type="error"
           showIcon
-          className="mt-10!"
         />
-      </>
+      </div>
     );
   }
 
-  //  Loading state
+  /* =========================
+     LOADING STATE
+  ========================== */
+
   if (isLoading || !data) {
     return <Skeleton active />;
   }
 
   const teachers = data.data;
 
+  /* =========================
+     MAIN UI
+  ========================== */
+
   return (
-    <div className="w-full ">
-      <Link href={"/admin/teacher/create-teacher"} className="my-8 py-8 ml-270  ">
+    <div className="w-full p-4">
+
+      <Link href="/admin/teacher/create-teacher">
         <Button type="primary">Add New Teacher</Button>
       </Link>
-      <Divider/>
 
-      <Table className="mt-2">
+      <Divider />
+
+      <Table>
         <TableCaption>List of Teachers</TableCaption>
 
         <TableHeader>
           <TableRow>
-            <TableHead>ID</TableHead>
+            <TableHead>Teacher ID</TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Phone</TableHead>
-            <TableHead>Subject</TableHead>
-            <TableHead>Department</TableHead>
-            <TableHead>Experience</TableHead>
-            <TableHead>Qualification</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Viwe</TableHead>
+            <TableHead>View</TableHead>
           </TableRow>
         </TableHeader>
 
         <TableBody>
-          {teachers.map((teacher: ITeacher) => (
-            <TableRow key={teacher.teacherId}>
-              <TableCell>{teacher.teacherId}</TableCell>
-              <TableCell className="capitalize">{teacher.user?.name}</TableCell>
-              <TableCell>{teacher.user?.email}</TableCell>
-              <TableCell>{teacher.user?.mobile}</TableCell>
-              <TableCell className="capitalize">{teacher.subjectsCanTeach?.join(", ")}</TableCell>
-              <TableCell>{teacher.department}</TableCell>
-              <TableCell>{teacher.experienceYears}</TableCell>
-              <TableCell>{teacher.highestQualification}</TableCell>
+          {teachers.map((teacher) => (
+            <TableRow key={teacher._id}>
+
+              <TableCell>
+                {teacher.account?.teacherId}
+              </TableCell>
+
+              <TableCell className="capitalize">
+                {teacher.account?.user?.name}
+              </TableCell>
+
+              <TableCell>
+                {teacher.account?.user?.email}
+              </TableCell>
+
+              <TableCell>
+                {teacher.account?.user?.mobile}
+              </TableCell>
+
               <TableCell>
                 <Badge
                   variant={
-                    teacher.status === "Active" ? "default" : "destructive"
+                    teacher.status === "ACTIVE"
+                      ? "default"
+                      : "destructive"
                   }
                 >
                   {teacher.status}
@@ -118,13 +147,15 @@ const Teacher = () => {
               </TableCell>
 
               <TableCell>
-                {/*  View Button */}
-                <Link href={`/admin/teacher/view-teacher/${teacher.user._id}`}>
-                  <Button type="default" size="small">
+                <Link
+                  href={`/admin/teacher/view-teacher/${teacher._id}`}
+                >
+                  <Button size="small">
                     View
                   </Button>
                 </Link>
               </TableCell>
+
             </TableRow>
           ))}
         </TableBody>
